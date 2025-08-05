@@ -20,9 +20,19 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @PostMapping("/login")
+    public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data){
+        var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
+        var auth = this.authenticationManager.authenticate(usernamePassword);
+
+        var token = tokenService.generateToken((User) auth.getPrincipal());
+
+        return ResponseEntity.ok(new LoginResponseDTO(token));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@RequestBody @Valid UserDTO dto) {
         UserRole userRole = UserRole.valueOf(dto.getRole().toUpperCase());
-        return ResponseEntity.ok(authService.register(dto, userRole));
+        return ResponseEntity.ok(authService.register(dto, userRole)) ;
     }
 }
