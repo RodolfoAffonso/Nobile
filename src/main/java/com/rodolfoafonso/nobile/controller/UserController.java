@@ -1,6 +1,7 @@
 package com.rodolfoafonso.nobile.controller;
 
 import com.rodolfoafonso.nobile.dto.UserDTO;
+import com.rodolfoafonso.nobile.dto.UserResponseDTO;
 import com.rodolfoafonso.nobile.service.UserService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -17,7 +18,7 @@ public class UserController {
 
     private final UserService  userService;
 
-    @PutMapping("/{id}")
+    @PutMapping("/{email}")
     @Transactional
     public ResponseEntity<UserDTO> updateUser(@PathVariable String email , @RequestBody @Valid UserDTO userDTO ){
         UserDTO tutorResponse = userService.update(email, userDTO);
@@ -25,12 +26,12 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserDTO> searchUser(){
+    public List<UserResponseDTO> searchUser(){
         return userService.search();
 
     }
     @GetMapping("/{email}")
-    public UserDTO searchUserbyEmail(@PathVariable String email){
+    public UserResponseDTO searchUserbyEmail(@PathVariable String email){
         return userService.searchByEmail(email);
     }
 

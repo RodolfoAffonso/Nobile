@@ -6,16 +6,19 @@ import com.rodolfoafonso.nobile.domain.enums.UserRole;
 import com.rodolfoafonso.nobile.dto.AuthResponseDTO;
 import com.rodolfoafonso.nobile.dto.AuthenticationDTO;
 import com.rodolfoafonso.nobile.dto.UserDTO;
+import com.rodolfoafonso.nobile.repository.UserRepository;
 import com.rodolfoafonso.nobile.service.AuthService;
 import com.rodolfoafonso.nobile.service.TokenService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,6 +41,12 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
 
     @MockitoBean
     private TokenService tokenService;
@@ -66,32 +75,35 @@ class AuthControllerTest {
     }
 
     @Test
-    void deveFazerLoginComSucesso() throws Exception {
-        AuthenticationDTO authDTO = new AuthenticationDTO();
-        authDTO.setLogin("teste@email.com");
-        authDTO.setPassword("123456");
+    void login_DeveRetornarToken() throws Exception {
+        AuthenticationDTO loginRequest = new AuthenticationDTO("user@email.com", "123456");
+        AuthResponseDTO mockResponse = new AuthResponseDTO("mocked-jwt-token");
 
-        // Mock do Authentication retornado pelo AuthenticationManager
-        Authentication authentication = mock(Authentication.class);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
+        Mockito.when(authService.login(any(AuthenticationDTO.class)))
+                .thenReturn(mockResponse);
 
-        User user = new User();
-        user.setEmail("teste@email.com");
-        when(authentication.getPrincipal()).thenReturn(user);
-
-        when(tokenService.generateToken(user)).thenReturn("fake-jwt-token");
-
+        // Act + Assert
         mockMvc.perform(post("/auth/login")
-                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authDTO)))
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("fake-jwt-token"));
-
-        // Verifica interações com mocks
-        verify(authenticationManager, times(1))
-                .authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(tokenService, times(1)).generateToken(user);
+                .andExpect(jsonPath("$.token").value("mocked-jwt-token"));
     }
+    @BeforeEach
+    void setup() {
+        User user = new User();
+        user.setEmail("valid@email.com");
+        user.setPassword(passwordEncoder.encode("123456"));
+        user.setRole(UserRole.USER);
+        userRepository.save(user);
+    }
+
+    @Test
+    void login_DeveRetornar401QuandoCredenciaisInvalidas() throws Exception {
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"valid@email.com\", \"password\":\"wrongpass\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
 }

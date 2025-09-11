@@ -4,7 +4,7 @@ import com.rodolfoafonso.nobile.domain.entity.User;
 import com.rodolfoafonso.nobile.domain.enums.UserRole;
 import com.rodolfoafonso.nobile.dto.AuthResponseDTO;
 import com.rodolfoafonso.nobile.dto.UserDTO;
-import com.rodolfoafonso.nobile.exception.ExistingEmailException;
+import com.rodolfoafonso.nobile.exception.BusinessRuleException;
 import com.rodolfoafonso.nobile.mapper.UserMapper;
 import com.rodolfoafonso.nobile.repository.UserRepository;
 import org.junit.jupiter.api.Assertions;
@@ -96,7 +96,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(new User()));
 
         // Act + Assert
-        Assertions.assertThrows(ExistingEmailException.class,
+        Assertions.assertThrows(BusinessRuleException.class,
                 () -> authService.register(dto, UserRole.USER));
 
         Mockito.verify(userRepository, Mockito.never()).save(Mockito.any());
