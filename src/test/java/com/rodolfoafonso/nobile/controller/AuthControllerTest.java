@@ -57,8 +57,9 @@ class AuthControllerTest {
     @Test
     void deveRegistrarUsuarioComSucesso() throws Exception {
         UserDTO userDTO = new UserDTO();
+        userDTO.setName("rodolfo");
         userDTO.setEmail("teste@email.com");
-        userDTO.setPassword("123456");
+        userDTO.setPassword("1fdmsf2eMn@");
         userDTO.setRole("USER");
 
         AuthResponseDTO responseDTO = new AuthResponseDTO("token-fake");
@@ -100,10 +101,18 @@ class AuthControllerTest {
 
     @Test
     void login_DeveRetornar401QuandoCredenciaisInvalidas() throws Exception {
+        AuthenticationDTO authDTO = new AuthenticationDTO("email@teste.com", "senhaErrada");
+
+        // Simula que o AuthService lança BadCredentialsException
+        when(authService.login(any(AuthenticationDTO.class)))
+                .thenThrow(new BadCredentialsException("Credenciais inválidas"));
+
         mockMvc.perform(post("/auth/login")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"valid@email.com\", \"password\":\"wrongpass\"}"))
+                        .content(objectMapper.writeValueAsString(authDTO)))
                 .andExpect(status().isUnauthorized());
     }
+
 
 }
