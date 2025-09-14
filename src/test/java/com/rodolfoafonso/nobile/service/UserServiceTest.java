@@ -3,6 +3,7 @@ package com.rodolfoafonso.nobile.service;
 import com.rodolfoafonso.nobile.domain.entity.User;
 import com.rodolfoafonso.nobile.dto.UserDTO;
 import com.rodolfoafonso.nobile.dto.UserResponseDTO;
+import com.rodolfoafonso.nobile.dto.UserUpdateDTO;
 import com.rodolfoafonso.nobile.exception.NotFoundException;
 import com.rodolfoafonso.nobile.mapper.UserMapper;
 import com.rodolfoafonso.nobile.repository.UserRepository;
@@ -12,16 +13,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
 
-
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -35,12 +36,10 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-
     private User user;
     private UserDTO userDTO;
     private UserResponseDTO userResponseDTO;
-
-
+    private UserUpdateDTO userUpdateDTO;
 
     @BeforeEach
     void setUp() {
@@ -56,33 +55,49 @@ class UserServiceTest {
         userResponseDTO = new UserResponseDTO();
         userResponseDTO.setName("Rodolfo");
         userResponseDTO.setEmail("rodolfo@email.com");
+
+        userUpdateDTO = new UserUpdateDTO();
+        userUpdateDTO.setName("Novo Nome");
     }
 
     @Test
     void deveAtualizarUserExistente() {
-        // given
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        // mocks repository e mapper
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-        when(mapper.mapper(any(UserDTO.class))).thenReturn(user);
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(mapper.mapper(any(User.class))).thenReturn(userDTO);
 
-        // when
-        UserDTO result = userService.update(user.getEmail(), userDTO);
+        UserDTO result = userService.update(userUpdateDTO);
 
-        // then
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(userRepository).save(any(User.class));
     }
+
 
     @Test
     void deveLancarNotFoundExceptionNoUpdate() {
-        // given
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("email@invalido.com");
 
-        // then
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        // Mock repository retorna vazio
+        when(userRepository.findByEmail(any(String.class))).thenReturn(Optional.empty());
+
+        // Verifica a exceção
         assertThrows(NotFoundException.class,
-                () -> userService.update(user.getEmail(), userDTO));
+                () -> userService.update(userUpdateDTO));
     }
 
     @Test
@@ -123,7 +138,5 @@ class UserServiceTest {
         assertThrows(NotFoundException.class,
                 () -> userService.searchByEmail(user.getEmail()));
     }
-
-
 
 }
