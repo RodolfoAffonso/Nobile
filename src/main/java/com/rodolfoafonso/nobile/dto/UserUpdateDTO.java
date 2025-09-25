@@ -19,6 +19,8 @@ public class UserUpdateDTO {
             message = "A senha deve conter letra maiúscula, minúscula, número e caractere especial"
     )
     private String password;
+    private String status; // pode vir do cliente
+
 
     // Email e Role não podem ser alterados aqui
 }

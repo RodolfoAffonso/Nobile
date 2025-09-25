@@ -1,12 +1,14 @@
 package com.rodolfoafonso.nobile.service;
 
 import com.rodolfoafonso.nobile.domain.entity.User;
+import com.rodolfoafonso.nobile.domain.enums.AccountStatus;
 import com.rodolfoafonso.nobile.dto.UserDTO;
 import com.rodolfoafonso.nobile.dto.UserResponseDTO;
 import com.rodolfoafonso.nobile.dto.UserUpdateDTO;
 import com.rodolfoafonso.nobile.exception.NotFoundException;
 import com.rodolfoafonso.nobile.mapper.UserMapper;
 import com.rodolfoafonso.nobile.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,9 +31,6 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
     public UserDTO update( UserUpdateDTO userUpdateDTO) {
-//        User existingUser = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new NotFoundException("Usuário não encontrado com e-mail: " + email));
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
@@ -64,14 +63,17 @@ public class UserService implements UserDetailsService {
         return mapper.mapperResponse(optional.get());
     }
 
+    @Transactional
+    public void deactivateAccount(Authentication authentication) {
+        String email = authentication.getName();
 
-    public UserDTO deleteByEmail(String email) {
-        Optional<User> optional = userRepository.findByEmail(email);
-        optional.orElseThrow(() -> new NotFoundException("Usuario não encontrado"));
-        userRepository.deleteById(optional.get().getId());
-        return mapper.mapper(optional.get());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
 
+        user.setStatus(AccountStatus.INACTIVE); // ou false se usar boolean
+        userRepository.save(user);
     }
+
 
     public UserResponseDTO getLoggedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -87,5 +89,7 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+
     }
+
 }

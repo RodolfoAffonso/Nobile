@@ -1,6 +1,7 @@
 package com.rodolfoafonso.nobile.domain.entity;
 
 
+import com.rodolfoafonso.nobile.domain.enums.AccountStatus;
 import com.rodolfoafonso.nobile.domain.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -39,11 +40,21 @@ public class User implements UserDetails {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
+
+    @Enumerated(EnumType.STRING)  // grava o texto no banco
+    @Column(nullable = false)
+    private AccountStatus status = AccountStatus.ACTIVE;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.role.getAuthorities().stream()
                 .map(SimpleGrantedAuthority::new)
                 .toList();
+    }
+
+    public boolean isEnabled() {
+        return this.status == AccountStatus.ACTIVE;
+
     }
 
     @Override

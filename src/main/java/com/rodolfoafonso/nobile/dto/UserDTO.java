@@ -1,5 +1,6 @@
 package com.rodolfoafonso.nobile.dto;
 
+import com.rodolfoafonso.nobile.domain.enums.AccountStatus;
 import jakarta.validation.constraints.*;
 
 
@@ -28,4 +29,6 @@ public class UserDTO {
     private String password;
     private String profilePicture;
     private String role; // BUYER ou SELLER
+    private String status; // pode vir do cliente
+
 }

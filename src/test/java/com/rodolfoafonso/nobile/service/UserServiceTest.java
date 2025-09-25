@@ -1,6 +1,7 @@
 package com.rodolfoafonso.nobile.service;
 
 import com.rodolfoafonso.nobile.domain.entity.User;
+import com.rodolfoafonso.nobile.domain.enums.AccountStatus;
 import com.rodolfoafonso.nobile.dto.UserDTO;
 import com.rodolfoafonso.nobile.dto.UserResponseDTO;
 import com.rodolfoafonso.nobile.dto.UserUpdateDTO;
@@ -137,6 +138,33 @@ class UserServiceTest {
         // then
         assertThrows(NotFoundException.class,
                 () -> userService.searchByEmail(user.getEmail()));
+    }
+    @Test
+    void deveDesativarContaDoUsuarioLogado() {
+        // given
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        user.setStatus(AccountStatus.ACTIVE); // status inicial
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        // when
+        userService.deactivateAccount(authentication);
+
+        // then
+        assertEquals(AccountStatus.INACTIVE, user.getStatus());
+        verify(userRepository).save(user);
+    }
+    @Test
+    void deveLancarNotFoundExceptionSeUsuarioNaoExistir() {
+        // given
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
+
+        // then
+        assertThrows(NotFoundException.class,
+                () -> userService.deactivateAccount(authentication));
     }
 
 }

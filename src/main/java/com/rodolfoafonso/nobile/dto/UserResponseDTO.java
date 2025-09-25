@@ -14,4 +14,6 @@ public class UserResponseDTO {
     private String email;
     private String profilePicture;
     private String role; // BUYER ou SELLER
+    private String status; // pode vir do cliente
+
 }

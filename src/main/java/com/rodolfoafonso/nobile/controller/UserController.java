@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,9 +44,10 @@ public class UserController {
         return ResponseEntity.ok(userResponse);
     }
 
-    @DeleteMapping("/{email}")
-    public UserDTO deleteUser(@PathVariable String email){
-        return userService.deleteByEmail(email);
+    @PatchMapping("/me/deactivate")
+    public ResponseEntity<Void> deactivateAccount(@AuthenticationPrincipal Authentication authentication) {
+        userService.deactivateAccount(authentication);
+        return ResponseEntity.noContent().build();
     }
 
 
