@@ -1,5 +1,6 @@
 package com.rodolfoafonso.nobile.domain.entity;
 
+import com.rodolfoafonso.nobile.domain.enums.WatchCondition;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,13 +26,17 @@ public class Watch {
     private String brand;
     private String model;
     private Integer year;
-    private String condition;
+    @Enumerated(EnumType.STRING)
+    private WatchCondition condition;
     private BigDecimal price;
 
     @ManyToOne
+    @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
     @ElementCollection
+    @CollectionTable(name = "watch_images", joinColumns = @JoinColumn(name = "watch_id"))
+    @Column(name = "image_url")
     private List<String> images = new ArrayList<>();
 
     private LocalDateTime createdAt = LocalDateTime.now();

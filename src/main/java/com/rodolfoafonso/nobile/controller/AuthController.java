@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,6 +47,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@RequestBody @Valid UserDTO dto) {
         UserRole userRole = UserRole.valueOf(dto.getRole().toUpperCase());
-        return ResponseEntity.ok(authService.register(dto, userRole)) ;
+        AuthResponseDTO response = authService.register(dto, userRole);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
 }
