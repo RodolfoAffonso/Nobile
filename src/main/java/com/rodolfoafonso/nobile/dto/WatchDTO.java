@@ -9,6 +9,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class WatchDTO {
     private String brand;
     private String model;

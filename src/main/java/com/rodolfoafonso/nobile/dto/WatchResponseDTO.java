@@ -9,6 +9,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class WatchResponseDTO {
     private Long id;
     private String brand;
