@@ -1,5 +1,6 @@
 package com.rodolfoafonso.nobile.exception;
 
+import jakarta.mail.MessagingException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -67,5 +68,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Ocorreu um erro inesperado. Tente novamente mais tarde." + ex.getMessage());
+    }
+
+    @ExceptionHandler(MessagingException.class)
+    public ResponseEntity<String> handleMessagingException(MessagingException ex) {
+        // Aqui você pode logar, notificar e enviar a resposta para o cliente
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro ao enviar e-mail: " + ex.getMessage());
     }
 }

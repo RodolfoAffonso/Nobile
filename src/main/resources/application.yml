@@ -1,0 +1,84 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: nobile
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/meu_banco
+    username: dev
+    password: dev
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # ===============================
+  # 📧 EMAIL (via Gmail SMTP)
+  # ===============================
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:rafonso113@gmail.com}
+    password: ${MAIL_PASSWORD:ifld obdu erpf uspy}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  # ===============================
+  # 🔹 REDIS (para cache e tokens temporários)
+  # ===============================
+  # redis:
+  #   host: localhost
+  #   port: 6379
+  #   password:
+  #   timeout: 2000ms
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+
+api:
+  security:
+    token:
+      secret: ${JWT_SECRET:my-secret-key}
+      expiration: 86400000 # 1 dia em milissegundos
+
+# ===============================
+# 🔹 CLOUDINARY (upload de imagens)
+# ===============================
+# cloudinary:
+#   cloud-name: ${CLOUDINARY_CLOUD_NAME}
+#   api-key: ${CLOUDINARY_API_KEY}
+#   api-secret: ${CLOUDINARY_API_SECRET}
+#   folder: nobile/uploads
+
+# ===============================
+# 🔹 STRIPE (pagamentos)
+# ===============================
+# stripe:
+#   secret-key: ${STRIPE_SECRET_KEY}
+#   publishable-key: ${STRIPE_PUBLISHABLE_KEY}
+#   webhook-secret: ${STRIPE_WEBHOOK_SECRET}

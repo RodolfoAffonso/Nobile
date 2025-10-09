@@ -5,6 +5,7 @@ import com.rodolfoafonso.nobile.domain.enums.AccountStatus;
 import com.rodolfoafonso.nobile.dto.UserDTO;
 import com.rodolfoafonso.nobile.dto.UserResponseDTO;
 import com.rodolfoafonso.nobile.dto.UserUpdateDTO;
+import com.rodolfoafonso.nobile.exception.BusinessRuleException;
 import com.rodolfoafonso.nobile.exception.NotFoundException;
 import com.rodolfoafonso.nobile.mapper.UserMapper;
 import com.rodolfoafonso.nobile.repository.UserRepository;
@@ -30,23 +31,18 @@ public class UserService implements UserDetailsService {
     private final UserMapper mapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserDTO update( UserUpdateDTO userUpdateDTO) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+    public UserDTO update(UserUpdateDTO dto) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        User existingUser = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado com email: " + email));
 
-        // Atualiza apenas os campos não nulos do DTO
-        mapper.updateUserFromDto(userUpdateDTO, existingUser);
+        Optional.ofNullable(dto.getPassword())
+                .ifPresent(newPassword -> validateAndChangePassword(dto, user, newPassword));
 
-        // Se enviou nova senha → criptografa
-        if (userUpdateDTO.getPassword() != null) {
-            existingUser.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
-        }
+        mapper.updateUserFromDto(dto, user);
 
-        User savedUser = userRepository.save(existingUser);
-        return mapper.mapper(savedUser);
+        return mapper.mapper(userRepository.save(user));
     }
 
     public List<UserResponseDTO> search() {
@@ -70,7 +66,7 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
 
-        user.setStatus(AccountStatus.INACTIVE); // ou false se usar boolean
+        user.setStatus(AccountStatus.INACTIVE);
         userRepository.save(user);
     }
 
@@ -91,5 +87,19 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
 
     }
+
+    private void validateAndChangePassword(UserUpdateDTO dto, User user, String newPassword) {
+        Optional.ofNullable(dto.getCurrentPassword())
+                .filter(current -> !current.isBlank())
+                .filter(current -> passwordEncoder.matches(current, user.getPassword()))
+                .map(current -> passwordEncoder.encode(newPassword))
+                .ifPresentOrElse(
+                        user::setPassword,
+                        () -> {
+                            throw new BusinessRuleException("Senha atual ausente ou incorreta.");
+                        }
+                );
+    }
+
 
 }

@@ -6,8 +6,10 @@ import com.rodolfoafonso.nobile.dto.AuthResponseDTO;
 import com.rodolfoafonso.nobile.dto.AuthenticationDTO;
 import com.rodolfoafonso.nobile.dto.UserDTO;
 import com.rodolfoafonso.nobile.exception.BusinessRuleException;
+import com.rodolfoafonso.nobile.exception.NotFoundException;
 import com.rodolfoafonso.nobile.mapper.UserMapper;
 import com.rodolfoafonso.nobile.repository.UserRepository;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,11 +22,12 @@ import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @Service
-public class AuthService  {
+public class AuthService {
 
-    private final  AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final EmailService emailService;
     private final UserMapper mapper;
     private final TokenService tokenService;
 
@@ -53,6 +56,30 @@ public class AuthService  {
         userRepository.save(user);
         String token = tokenService.generateToken(user);
         return new AuthResponseDTO(token);
+    }
+
+    // Solicita redefinição de senha: gera token e envia e-mail
+    public void requestPasswordReset(String email) throws MessagingException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado com email: " + email));
+
+        String token = tokenService.generateToken(user);
+        emailService.sendPasswordResetEmail(user.getEmail(), token);
+    }
+
+    // Redefine senha usando token JWT
+    public void resetPassword(String token, String newPassword) {
+        String email = tokenService.validateToken(token);
+
+        if (email.isEmpty()) {
+            throw new NotFoundException("Token inválido ou expirado.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado."));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
 
