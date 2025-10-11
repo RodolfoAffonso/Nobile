@@ -18,7 +18,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine emailTemplateEngine;
 
-    public void sendPasswordResetEmail(String to, String token) throws MessagingException {
+    public void sendPasswordResetEmail(String to, String username ,String token) throws MessagingException {
         String resetLink = "http://localhost:3000/reset-password?token=" + token;
 
         MimeMessage message = mailSender.createMimeMessage();
@@ -28,6 +28,7 @@ public class EmailService {
         helper.setSubject("Recuperação de senha - Nobile");
 
         Context context = new Context();
+        context.setVariable("userName", username);
         context.setVariable("resetLink", resetLink);
 
         String htmlContent = emailTemplateEngine.process("password-reset", context);

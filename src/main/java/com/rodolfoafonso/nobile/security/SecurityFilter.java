@@ -27,18 +27,27 @@ public class SecurityFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        var token = this.recoverToken(request);
-        System.out.println("TOKEN: " + token);
-        if(token != null){
-            var login = tokenService.validateToken(token);
-            var user = userRepository.findByEmail(login)
-                    .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + login));
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        // Defina endpoints que não precisam de autenticação
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/v1/auth/reset-password") || path.startsWith("/api/v1/auth/request-reset")) {
+            filterChain.doFilter(request, response);
+            return; // não faz nada se for endpoint público
         }
 
+        var token = this.recoverToken(request);
+        if (token != null) {
+            var login = tokenService.validateToken(token);
+            if (!login.isEmpty()) {
+                var user = userRepository.findByEmail(login)
+                        .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + login));
+
+                var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        }
 
         filterChain.doFilter(request, response);
     }

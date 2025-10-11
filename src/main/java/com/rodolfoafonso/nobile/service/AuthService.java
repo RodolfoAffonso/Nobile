@@ -64,7 +64,7 @@ public class AuthService {
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado com email: " + email));
 
         String token = tokenService.generateToken(user);
-        emailService.sendPasswordResetEmail(user.getEmail(), token);
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getName(),token);
     }
 
     // Redefine senha usando token JWT
