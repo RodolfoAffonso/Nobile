@@ -62,7 +62,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deveAtualizarUserExistente() {
+    void  deveAtualizarUserExistente() {
         // Mock SecurityContext
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn(user.getEmail());

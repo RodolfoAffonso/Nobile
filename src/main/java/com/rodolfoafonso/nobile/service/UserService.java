@@ -37,13 +37,16 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado com email: " + email));
 
+        // Atualiza campos simples, ignorando nulos
+        mapper.updateUserFromDto(dto, user);
+
+        // Atualiza senha, se necessário, após o mapeamento
         Optional.ofNullable(dto.getPassword())
                 .ifPresent(newPassword -> validateAndChangePassword(dto, user, newPassword));
 
-        mapper.updateUserFromDto(dto, user);
-
         return mapper.mapper(userRepository.save(user));
     }
+
 
     public List<UserResponseDTO> search() {
         return userRepository.findAll()
@@ -89,16 +92,18 @@ public class UserService implements UserDetailsService {
     }
 
     private void validateAndChangePassword(UserUpdateDTO dto, User user, String newPassword) {
-        Optional.ofNullable(dto.getCurrentPassword())
-                .filter(current -> !current.isBlank())
-                .filter(current -> passwordEncoder.matches(current, user.getPassword()))
-                .map(current -> passwordEncoder.encode(newPassword))
-                .ifPresentOrElse(
-                        user::setPassword,
-                        () -> {
-                            throw new BusinessRuleException("Senha atual ausente ou incorreta.");
-                        }
-                );
+        String currentPassword = dto.getCurrentPassword();
+
+        if (currentPassword == null || currentPassword.isBlank() ||
+                !passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BusinessRuleException("Senha atual ausente ou incorreta.");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new BusinessRuleException("A nova senha não pode ser igual à atual.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
     }
 
 

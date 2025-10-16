@@ -30,6 +30,7 @@ public class AuthService {
     private final EmailService emailService;
     private final UserMapper mapper;
     private final TokenService tokenService;
+    private final PasswordResetTokenService passwordResetTokenService;
 
 
     public AuthResponseDTO login(@Valid AuthenticationDTO data) {
@@ -63,23 +64,24 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado com email: " + email));
 
-        String token = tokenService.generateToken(user);
+        String token = passwordResetTokenService.generateResetToken(user.getEmail());
         emailService.sendPasswordResetEmail(user.getEmail(), user.getName(),token);
     }
 
     // Redefine senha usando token JWT
     public void resetPassword(String token, String newPassword) {
-        String email = tokenService.validateToken(token);
-
+        String email = passwordResetTokenService.validateToken(token);
         if (email.isEmpty()) {
-            throw new NotFoundException("Token inválido ou expirado.");
+            throw new RuntimeException("Token inválido ou expirado.");
         }
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("Usuário não encontrado."));
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+
+        passwordResetTokenService.invalidateToken(token);
     }
 
 
